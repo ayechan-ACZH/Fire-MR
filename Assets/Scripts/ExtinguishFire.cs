@@ -21,10 +21,15 @@ public class ExtinguishFire : MonoBehaviour
     public GameObject trainerPanelUI;
     public GameObject firePrefab;
 
+    private GameObject currentFireInstance;
+
     public ParticleSystem controllerWaterParticles;
     public ParticleSystem handWaterParticles;
     public ParticleSystem fireParticles;
     public GameObject fireAlarm;
+
+    // track the spawned fire alarm instance so we can remove it safely without touching the prefab reference
+    private GameObject currentFireAlarmInstance;
     public int timeToExtinguish = 600;
 
     public AudioSource aiNarrationAudio;
@@ -33,6 +38,8 @@ public class ExtinguishFire : MonoBehaviour
     public AudioClip aiNarrationWelcome1;
     public AudioClip aiNarrationWelcome2;
     public AudioClip aiNarrationWelcome3;
+
+    private bool aiNarrationStarted = false;
     public AudioSource fireExtinguishingAudio;
     ParticleSystem currentWaterParticles;
     bool soundIsPlaying;
@@ -58,7 +65,7 @@ public class ExtinguishFire : MonoBehaviour
     float distanceY;
     float distanceZ;
     public float distanceBetweenFingerAndPalm;
-    public bool handControlsLocked = true;
+    public bool handControlsLocked = false;
 
     private TcpListener tcpListener;
 
@@ -188,8 +195,8 @@ public class ExtinguishFire : MonoBehaviour
             distanceZ = delta.z;
             distanceBetweenFingerAndPalm = delta.magnitude * 100;
         }
-        
-        if (!handControlsLocked) 
+
+        if (!handControlsLocked || true) 
         {
           // if the left trigger is pressed, play the water particles from the hand and increment the water used and play the sound
           if ((OVRInput.Get(OVRInput.Axis1D.PrimaryIndexTrigger) > 0.5f)||
@@ -217,7 +224,7 @@ public class ExtinguishFire : MonoBehaviour
           }
         }
         // ifthe right trigger is pressed, instantiate the fire particles at the hand position
-        if (OVRInput.GetDown(OVRInput.Button.SecondaryThumbstick))
+        if (OVRInput.GetDown(OVRInput.Button.One, OVRInput.Controller.RTouch) || Input.GetKeyDown(KeyCode.F))
         {
             // get the transform position in a varable and set the y value to 0
             Vector3 spawnPos = transform.position;
@@ -225,30 +232,56 @@ public class ExtinguishFire : MonoBehaviour
 
             GameObject spawnedFire = Instantiate(firePrefab, spawnPos, Quaternion.identity);
 
+            currentFireInstance = spawnedFire;
+
             // set the fire particles to the instantiated fire particles child
             fireParticles = spawnedFire.transform.GetChild(0).GetComponent<ParticleSystem>();
+
+
+
+            //fireParticles = spawnedFire.GetComponent<ParticleSystem>();
+            Debug.Log("Fire particles: "+fireParticles);
         }
 
         // if the b button is pressed, add a fire alarm game object to the position of the hand
         if (OVRInput.GetDown(OVRInput.Button.Two))
         {
+            
             Vector3 spawnPos = transform.position;
 
             // make the rotation of the fire alarm the same as the hand
             Quaternion spawnRot = transform.rotation;
 
-            Instantiate(fireAlarm, spawnPos, spawnRot);
+            // If we previously spawned an alarm, destroy that instance first (safe runtime destroy).
+            if (currentFireAlarmInstance != null)
+            {
+                Destroy(currentFireAlarmInstance);
+                currentFireAlarmInstance = null;
+            }
+
+            // Instantiate a fresh fire alarm after cleaning up the previous spawned instance
+            if (fireAlarm != null)
+            {
+                currentFireAlarmInstance = Instantiate(fireAlarm, spawnPos, spawnRot);
+            }
         }
 
         // if the left thumbstick is pressed, play the ai narration audio or the space bar is pressed
         if (OVRInput.GetDown(OVRInput.Button.PrimaryThumbstick) || Input.GetKeyDown(KeyCode.D))
         {
-            Debug.Log("Playing AI Narration");
+
+            //play the ai narration only once
+            if(!aiNarrationStarted){
+                Debug.Log("Playing AI Narration");
             
-            // make the trainer panel ui disappear
-            trainerPanelUI.SetActive(false);
+                // make the trainer panel ui disappear
+                trainerPanelUI.SetActive(false);
+
+                StartAINarration();
+                aiNarrationStarted = true;
+            }
             
-            StartAINarration();
+            
         }
 
         // if the fire particles are alive, increment the time since fire start
@@ -257,9 +290,23 @@ public class ExtinguishFire : MonoBehaviour
             timeSinceFireStart += 1;
         }
 
+        if (Input.GetKeyDown(KeyCode.S))
+        {
+            Debug.Log("Stopping stopping fire particles via keyboard S key.");
+            // Stop emission and clear any existing particles so the visual fire disappears immediately
+            if (fireParticles != null)
+            {
+                fireParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                Debug.Log("fireParticles StopEmittingAndClear called. isPlaying=" + fireParticles.isPlaying + ", isAlive=" + fireParticles.IsAlive());
+            }
+
+            Destroy(currentFireInstance);
+        }
+
         // check if the water particles are colliding with the fire particles for more than 3 seconds
         if (currentWaterParticles && fireParticles)
         {
+            Debug.Log("1.Checking for collision between water and fire particles.");
             if (currentWaterParticles.IsAlive() && fireParticles.IsAlive())
             {
                 // get the bounds of the water particles
@@ -267,10 +314,11 @@ public class ExtinguishFire : MonoBehaviour
 
                 // get the bounds of the fire particles
                 Bounds fireBounds = fireParticles.GetComponent<Renderer>().bounds;
-
+                Debug.Log("2.Fire is alive");
                 // check if the water particles are colliding with the fire particles
                 if (waterBounds.Intersects(fireBounds))
                 {
+                    Debug.Log("3.Water particles are colliding with fire particles.");
                     timeToExtinguish -= 1;
                     serverConfigStatusText.text = "Time to extinguish: " + timeToExtinguish;
                     serverConfigStatusText.text += "\nTime since fire start: " + timeSinceFireStart;
@@ -281,7 +329,11 @@ public class ExtinguishFire : MonoBehaviour
                     // if the time to extinguish is less than or equal to 0, stop the fire particles and get the final score
                     if (timeToExtinguish <= 0)
                     {
+
+                        Debug.Log("4.Fire extinguished!");
                         fireParticles.Stop();
+
+                        Destroy(currentFireInstance);
 
                         finishAINarration();
 
