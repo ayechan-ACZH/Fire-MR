@@ -73,8 +73,9 @@ Shader "SH_Vefects_VFX_URP_Particles_Erosion_01"
 		
 
 		HLSLINCLUDE
-		#pragma target 4.0
+		#pragma target 3.0
 		#pragma prefer_hlslcc gles
+		#pragma exclude_renderers d3d11_9x
 		// ensure rendering platforms toggle list is visible
 
 		#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
@@ -532,7 +533,8 @@ Shader "SH_Vefects_VFX_URP_Particles_Erosion_01"
 				float3 BakedAlbedo = 0;
 				float3 BakedEmission = 0;
 				float3 Color = ( ( ( _Color * IN.ase_color ) * temp_output_120_0 ) * _EmissionIntensity ).rgb;
-				float Alpha = saturate( ( IN.ase_color.a * saturate( ( saturate( ( saturate( ( temp_output_120_0 * _OpacityBoost ) ) - ( IN.ase_texcoord5.x + _Dissolve ) ) ) * distanceDepth95 ) ) ) );
+				// Depth fade disabled - particles now always visible regardless of distance from geometry
+				float Alpha = saturate( ( IN.ase_color.a * saturate( ( saturate( ( saturate( ( temp_output_120_0 * _OpacityBoost ) ) - ( IN.ase_texcoord5.x + _Dissolve ) ) ) /* * distanceDepth95 */ ) ) ) );
 				float AlphaClipThreshold = 0.5;
 				float AlphaClipThresholdShadow = 0.5;
 

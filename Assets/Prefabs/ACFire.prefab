@@ -53376,7 +53376,7 @@ AudioSource:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8295591563862043295}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 8300000, guid: af0e33a1b1f847f4f80e106592282d96, type: 3}
@@ -53491,7 +53491,7 @@ BoxCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 3
   m_Size: {x: 1.42, y: 1.42, z: 1}
   m_Center: {x: 0, y: 0.45, z: 0}
@@ -53503,6 +53503,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 8295591563862043288}
     m_Modifications:
+    - target: {fileID: 635812762500967463, guid: d76b871ee7df4e647bd81f30d9d3c85b, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2741609753374771451, guid: d76b871ee7df4e647bd81f30d9d3c85b, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.5
@@ -53562,6 +53566,10 @@ PrefabInstance:
     - target: {fileID: 3518005741300394829, guid: d76b871ee7df4e647bd81f30d9d3c85b, type: 3}
       propertyPath: m_Name
       value: FireVFX
+      objectReference: {fileID: 0}
+    - target: {fileID: 3518005741300394829, guid: d76b871ee7df4e647bd81f30d9d3c85b, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:

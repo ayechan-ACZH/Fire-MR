@@ -65,7 +65,7 @@ public class ExtinguishFire : MonoBehaviour
     float distanceY;
     float distanceZ;
     public float distanceBetweenFingerAndPalm;
-    public bool handControlsLocked = false;
+    public bool handControlsLocked = true;
 
     private TcpListener tcpListener;
 
@@ -196,7 +196,7 @@ public class ExtinguishFire : MonoBehaviour
             distanceBetweenFingerAndPalm = delta.magnitude * 100;
         }
 
-        if (!handControlsLocked || true) 
+        if (!handControlsLocked) 
         {
           // if the left trigger is pressed, play the water particles from the hand and increment the water used and play the sound
           if ((OVRInput.Get(OVRInput.Axis1D.PrimaryIndexTrigger) > 0.5f)||
@@ -230,14 +230,20 @@ public class ExtinguishFire : MonoBehaviour
             Vector3 spawnPos = transform.position;
             // spawnPos.y = 0; // this is if we want to spawn the fire particles at the floor level
 
+            // If we previously spawned a fire, destroy that instance first (safe runtime destroy).
+            if (currentFireInstance != null)
+            {
+                Destroy(currentFireInstance);
+                currentFireInstance = null;
+            }
+
+            // Instantiate a fresh fire after cleaning up the previous spawned instance
             GameObject spawnedFire = Instantiate(firePrefab, spawnPos, Quaternion.identity);
 
             currentFireInstance = spawnedFire;
 
             // set the fire particles to the instantiated fire particles child
             fireParticles = spawnedFire.transform.GetChild(0).GetComponent<ParticleSystem>();
-
-
 
             //fireParticles = spawnedFire.GetComponent<ParticleSystem>();
             Debug.Log("Fire particles: "+fireParticles);
