@@ -12,6 +12,8 @@ using TMPro;
 using Unity.Services.CloudSave;
 using System.Collections.Generic;
 using System.Net.NetworkInformation;
+using System.Runtime.ExceptionServices;
+using UnityEngine.SocialPlatforms.Impl;
 
 public class ExtinguishFire : MonoBehaviour
 {
@@ -20,6 +22,10 @@ public class ExtinguishFire : MonoBehaviour
     DisplayPlayerDataUI displayPlayerDataUI;
 
     public TextMeshProUGUI waterUsedText;
+
+    public TextMeshProUGUI timeText;
+
+    public TextMeshProUGUI finalScoreText;
 
     public GameObject trainerPanelUI;
     public GameObject firePrefab;
@@ -215,7 +221,7 @@ public class ExtinguishFire : MonoBehaviour
               amtWaterUsed += 1;
               currentWaterParticles.Play();
 
-              waterUsedText.text = "Fire Extinguished!: " + ( amtWaterUsed) + " water used.";
+              waterUsedText.text = amtWaterUsed.ToString();
               Debug.Log("Water used" + (amtWaterUsed));
 
           }
@@ -303,6 +309,8 @@ public class ExtinguishFire : MonoBehaviour
         if (currentFireInstance != null && fireParticles.IsAlive())
         {
             timeSinceFireStart += 1;
+            timeText.text = timeSinceFireStart.ToString();
+
         }
 
         // if (Input.GetKeyDown(KeyCode.S))
@@ -354,6 +362,12 @@ public class ExtinguishFire : MonoBehaviour
                         finishAINarration();
 
                         scoreManager.getFinalScore(currentPlayerName, true, 600 + timeToExtinguish, amtWaterUsed, timeSinceFireStart);
+
+                        int finalScore = timeSinceFireStart - amtWaterUsed - timeToExtinguish;
+
+                        finalScoreText.text = finalScore.ToString();
+
+                        
 
 
                         
