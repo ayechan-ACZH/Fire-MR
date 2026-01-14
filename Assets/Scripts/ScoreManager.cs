@@ -42,6 +42,8 @@ public class ScoreManager : MonoBehaviour
         int timeSinceFireStart
         // int timeTakenToDiscoverFire
     )
+
+    
     {
         int score = timeSinceFireStart - waterUsed - timeToExtinguishFire;
 

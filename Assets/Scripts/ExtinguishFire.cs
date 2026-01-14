@@ -17,6 +17,9 @@ public class ExtinguishFire : MonoBehaviour
 {
     CloudSaveDataManager cloudSaveDataManager;
     ScoreManager scoreManager;
+    DisplayPlayerDataUI displayPlayerDataUI;
+
+    public TextMeshProUGUI waterUsedText;
 
     public GameObject trainerPanelUI;
     public GameObject firePrefab;
@@ -84,6 +87,7 @@ public class ExtinguishFire : MonoBehaviour
     {
         cloudSaveDataManager = GameObject.FindGameObjectWithTag("RHController").GetComponent<CloudSaveDataManager>();
         scoreManager = GameObject.FindGameObjectWithTag("RHController").GetComponent<ScoreManager>();
+        displayPlayerDataUI = FindObjectOfType<DisplayPlayerDataUI>();
 
         await UnityServices.InitializeAsync();
         await AuthenticationService.Instance.SignInAnonymouslyAsync();
@@ -196,7 +200,7 @@ public class ExtinguishFire : MonoBehaviour
             distanceBetweenFingerAndPalm = delta.magnitude * 100;
         }
 
-        if (!handControlsLocked) 
+        if (!handControlsLocked || true) 
         {
           // if the left trigger is pressed, play the water particles from the hand and increment the water used and play the sound
           if ((OVRInput.Get(OVRInput.Axis1D.PrimaryIndexTrigger) > 0.5f)||
@@ -211,6 +215,9 @@ public class ExtinguishFire : MonoBehaviour
               amtWaterUsed += 1;
               currentWaterParticles.Play();
 
+              waterUsedText.text = "Fire Extinguished!: " + ( amtWaterUsed) + " water used.";
+              Debug.Log("Water used" + (amtWaterUsed));
+
           }
           else
           {
@@ -224,6 +231,8 @@ public class ExtinguishFire : MonoBehaviour
           }
         }
         // ifthe right trigger is pressed, instantiate the fire particles at the hand position
+        
+        
         if (OVRInput.GetDown(OVRInput.Button.One, OVRInput.Controller.RTouch) || Input.GetKeyDown(KeyCode.F))
         {
             // get the transform position in a varable and set the y value to 0
@@ -291,46 +300,47 @@ public class ExtinguishFire : MonoBehaviour
         }
 
         // if the fire particles are alive, increment the time since fire start
-        if (fireParticles.IsAlive())
+        if (currentFireInstance != null && fireParticles.IsAlive())
         {
             timeSinceFireStart += 1;
         }
 
-        if (Input.GetKeyDown(KeyCode.S))
-        {
-            Debug.Log("Stopping stopping fire particles via keyboard S key.");
-            // Stop emission and clear any existing particles so the visual fire disappears immediately
-            if (fireParticles != null)
-            {
-                fireParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-                Debug.Log("fireParticles StopEmittingAndClear called. isPlaying=" + fireParticles.isPlaying + ", isAlive=" + fireParticles.IsAlive());
-            }
+        // if (Input.GetKeyDown(KeyCode.S))
+        // {
+        //     Debug.Log("Stopping stopping fire particles via keyboard S key.");
+        //     // Stop emission and clear any existing particles so the visual fire disappears immediately
+        //     if (fireParticles != null)
+        //     {
+        //         fireParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        //         Debug.Log("fireParticles StopEmittingAndClear called. isPlaying=" + fireParticles.isPlaying + ", isAlive=" + fireParticles.IsAlive());
+        //     }
 
-            Destroy(currentFireInstance);
-        }
+        //     Destroy(currentFireInstance);
+        // }
 
         // check if the water particles are colliding with the fire particles for more than 3 seconds
         if (currentWaterParticles && fireParticles)
         {
-            Debug.Log("1.Checking for collision between water and fire particles.");
+            
             if (currentWaterParticles.IsAlive() && fireParticles.IsAlive())
             {
-                // get the bounds of the water particles
-                Bounds waterBounds = currentWaterParticles.GetComponent<Renderer>().bounds;
-
-                // get the bounds of the fire particles
-                Bounds fireBounds = fireParticles.GetComponent<Renderer>().bounds;
-                Debug.Log("2.Fire is alive");
-                // check if the water particles are colliding with the fire particles
-                if (waterBounds.Intersects(fireBounds))
+                // Calculate distance and angle between water and fire
+                Vector3 toFire = fireParticles.transform.position - currentWaterParticles.transform.position;
+                float distance = toFire.magnitude;
+                float angle = Vector3.Angle(currentWaterParticles.transform.forward, toFire);
+                
+                // check if water is aimed at fire (within distance and angle threshold)
+                if (distance < 1.0f && angle < 45f)
                 {
-                    Debug.Log("3.Water particles are colliding with fire particles.");
+                    Debug.Log("3.Water is aimed at fire - distance: " + distance + ", angle: " + angle);
                     timeToExtinguish -= 1;
                     serverConfigStatusText.text = "Time to extinguish: " + timeToExtinguish;
                     serverConfigStatusText.text += "\nTime since fire start: " + timeSinceFireStart;
                     serverConfigStatusText.text += "\nWater used: " + amtWaterUsed;
 
                     Debug.Log("Time to extinguish: " + timeToExtinguish);
+
+                    
                     
                     // if the time to extinguish is less than or equal to 0, stop the fire particles and get the final score
                     if (timeToExtinguish <= 0)
@@ -344,8 +354,25 @@ public class ExtinguishFire : MonoBehaviour
                         finishAINarration();
 
                         scoreManager.getFinalScore(currentPlayerName, true, 600 + timeToExtinguish, amtWaterUsed, timeSinceFireStart);
+
+
+                        
+                        // Load and display player data on UI after saving
+                        if (displayPlayerDataUI != null)
+                        {
+                            string playerId = AuthenticationService.Instance.PlayerId;
+                            _ = displayPlayerDataUI.LoadAndDisplayPlayerData(currentPlayerName, playerId);
+                        }
+                        else
+                        {
+                            Debug.LogWarning("DisplayPlayerDataUI component not found in scene!");
+                            serverConfigStatusText.text += "\nError: Can't find displayPlayerDataUI";
+                        }
+                        
                         // shw this device id on the screen
                         serverConfigStatusText.text += "\nDevice ID: " + SystemInfo.deviceUniqueIdentifier;
+
+                        
                         
                     }
 
