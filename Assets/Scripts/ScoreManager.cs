@@ -56,11 +56,35 @@ public class ScoreManager : MonoBehaviour
         serverConfigStatusText.text += "New score: " + score + "\n";
 
         // send score to server
-        // cloudSaveDataManager.SavePublicData // takes string key and string value
-        cloudSaveDataManager.SavePublicData(currentPlayerName + "_TimeToExtinguishFire", timeToExtinguishFire.ToString());
-        cloudSaveDataManager.SavePublicData(currentPlayerName + "_WaterUsed", waterUsed.ToString());
-        cloudSaveDataManager.SavePublicData(currentPlayerName + "_TimeSinceFireStart", timeSinceFireStart.ToString());
-        cloudSaveDataManager.SavePublicData(currentPlayerName + "_FinalScore", score.ToString());
+        // Sanitize player name to avoid invalid characters in keys
+        string sanitizedPlayerName = SanitizeKeyName(currentPlayerName);
+        Debug.Log($"[ScoreManager] Saving scores for player: '{currentPlayerName}' (sanitized: '{sanitizedPlayerName}')");
+        
+        cloudSaveDataManager.SavePublicData(sanitizedPlayerName + "_TimeToExtinguishFire", timeToExtinguishFire.ToString());
+        cloudSaveDataManager.SavePublicData(sanitizedPlayerName + "_WaterUsed", waterUsed.ToString());
+        cloudSaveDataManager.SavePublicData(sanitizedPlayerName + "_TimeSinceFireStart", timeSinceFireStart.ToString());
+        cloudSaveDataManager.SavePublicData(sanitizedPlayerName + "_FinalScore", score.ToString());
+    }
+    
+    // Sanitize key names by removing invalid characters
+    private string SanitizeKeyName(string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return "UnknownPlayer";
+            
+        // Replace invalid characters with underscores
+        char[] invalidChars = new char[] { '/', '\\', '#', '?', '&', '=', ' ' };
+        string sanitized = input;
+        foreach (char c in invalidChars)
+        {
+            sanitized = sanitized.Replace(c, '_');
+        }
+        
+        // Limit length to 200 to leave room for suffix
+        if (sanitized.Length > 200)
+            sanitized = sanitized.Substring(0, 200);
+            
+        return sanitized;
         
     }
 }

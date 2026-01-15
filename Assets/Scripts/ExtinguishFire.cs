@@ -52,8 +52,8 @@ public class ExtinguishFire : MonoBehaviour
     public AudioSource fireExtinguishingAudio;
     ParticleSystem currentWaterParticles;
     bool soundIsPlaying;
-    int amtWaterUsed = 0;
-    int timeSinceFireStart = 0;
+    public int amtWaterUsed = 0;
+    public int timeSinceFireStart = 0;
 
     public TextMeshProUGUI serverConfigStatusText;
 
@@ -338,7 +338,7 @@ public class ExtinguishFire : MonoBehaviour
                 float angle = Vector3.Angle(currentWaterParticles.transform.forward, toFire);
                 
                 // check if water is aimed at fire (within distance and angle threshold)
-                if (distance < 1.0f && angle < 45f)
+                if (distance < 10.0f && angle < 45f)
                 {
                     Debug.Log("3.Water is aimed at fire - distance: " + distance + ", angle: " + angle);
                     timeToExtinguish -= 1;

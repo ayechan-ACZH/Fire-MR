@@ -88,13 +88,111 @@ public class CloudSaveDataManager : MonoBehaviour
 
   
 
+    // Validates if a key is valid for Cloud Save
+    private bool IsValidKey(string key, out string errorMessage)
+    {
+        errorMessage = null;
+        
+        if (string.IsNullOrEmpty(key))
+        {
+            errorMessage = "Key cannot be null or empty";
+            return false;
+        }
+        
+        if (key.Length > 255)
+        {
+            errorMessage = $"Key length ({key.Length}) exceeds maximum of 255 characters";
+            return false;
+        }
+        
+        // Check for invalid characters (Cloud Save typically doesn't allow certain special characters)
+        char[] invalidChars = new char[] { '/', '\\', '#', '?', '&', '=', ' ' };
+        foreach (char c in invalidChars)
+        {
+            if (key.Contains(c))
+            {
+                errorMessage = $"Key contains invalid character: '{c}'";
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    // Validates if data is valid for Cloud Save
+    private bool IsValidData(string data, out string errorMessage)
+    {
+        errorMessage = null;
+        
+        if (data == null)
+        {
+            errorMessage = "Data cannot be null";
+            return false;
+        }
+        
+        // Check data size (Cloud Save has a 5KB limit per item)
+        int dataSize = System.Text.Encoding.UTF8.GetByteCount(data);
+        if (dataSize > 5120) // 5KB in bytes
+        {
+            errorMessage = $"Data size ({dataSize} bytes) exceeds maximum of 5KB (5120 bytes)";
+            return false;
+        }
+        
+        return true;
+    }
+
     // saves data to the cloud with public read access for all players
     public async void SavePublicData(string key, string data)
     {
-        var dataDict = new Dictionary<string, object> { { key, data } };
-        await CloudSaveService.Instance.Data.Player.SaveAsync(dataDict, new SaveOptions(new PublicWriteAccessClassOptions()));
-        Debug.Log("Saved public data");
-        text.text += "\nSaved public data" + key + " : " + data;
+        try
+        {
+            Debug.Log($"[SavePublicData] Attempting to save - Key: '{key}', Data Length: {data?.Length ?? 0}");
+            
+            // Validate key
+            if (!IsValidKey(key, out string keyError))
+            {
+                Debug.LogError($"[SavePublicData] Invalid key '{key}': {keyError}");
+                if (text != null) text.text += $"\n❌ Error: {keyError}";
+                return;
+            }
+            
+            // Validate data
+            if (!IsValidData(data, out string dataError))
+            {
+                Debug.LogError($"[SavePublicData] Invalid data for key '{key}': {dataError}");
+                if (text != null) text.text += $"\n❌ Error: {dataError}";
+                return;
+            }
+            
+            var dataDict = new Dictionary<string, object> { { key, data } };
+            await CloudSaveService.Instance.Data.Player.SaveAsync(dataDict, new SaveOptions(new PublicWriteAccessClassOptions()));
+            
+            Debug.Log($"[SavePublicData] ✓ Successfully saved - Key: '{key}', Data: '{data.Substring(0, System.Math.Min(50, data.Length))}...'");
+            if (text != null) text.text += $"\n✓ Saved: {key} = {data.Substring(0, System.Math.Min(20, data.Length))}...";
+        }
+        catch (CloudSaveValidationException ex)
+        {
+            Debug.LogError($"[SavePublicData] Validation Error for key '{key}':\n" +
+                          $"Message: {ex.Message}\n" +
+                          $"Details: {ex.Details}\n" +
+                          $"Error Code: {ex.ErrorCode}");
+            if (text != null) text.text += $"\n❌ Validation Error: {ex.Message}";
+        }
+        catch (CloudSaveException ex)
+        {
+            Debug.LogError($"[SavePublicData] Cloud Save Error for key '{key}':\n" +
+                          $"Message: {ex.Message}\n" +
+                          $"Error Code: {ex.ErrorCode}");
+            if (text != null) text.text += $"\n❌ Cloud Save Error: {ex.Message}";
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[SavePublicData] Unexpected Error for key '{key}':\n" +
+                          $"Type: {ex.GetType().Name}\n" +
+                          $"Message: {ex.Message}\n" +
+                          $"Stack Trace: {ex.StackTrace}");
+            if (text != null) text.text += $"\n❌ Error: {ex.Message}";
+        }
     }
 
     // loads data from the cloud with public read access for a specific player
@@ -115,7 +213,9 @@ public class CloudSaveDataManager : MonoBehaviour
       "SWLFCT1V5db4H8AH4cAaXYnW1r67",
       "gtISJtVu72LykdN6ohBZgNMf2Mfy",
       "jz46kXj64jRxIAyxwRooEEhBhlAl",
-      "z1MkqBhkOvDwIeIMl6LQ7eLT4ONW"
+      "z1MkqBhkOvDwIeIMl6LQ7eLT4ONW",
+      "KYWnVZbtQbHOEqcGRPkyeAlLgOsB",
+      "tDDmH7X62TcY5CG9RgkdhYeo111b"
       };
     
     // loop through all player ids and load public data

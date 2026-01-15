@@ -58,11 +58,15 @@ public class DisplayPlayerDataUI : MonoBehaviour
     {
         try
         {
+            // Sanitize player name to match how ScoreManager saves the keys
+            string sanitizedPlayerName = SanitizeKeyName(playerName);
+            Debug.Log($"[DisplayPlayerDataUI] Loading data for player: '{playerName}' (sanitized: '{sanitizedPlayerName}')");
+            
             var keys = new HashSet<string> {
-                playerName + "_FinalScore",
-                playerName + "_WaterUsed",
-                playerName + "_TimeToExtinguishFire",
-                playerName + "_TimeSinceFireStart",
+                sanitizedPlayerName + "_FinalScore",
+                sanitizedPlayerName + "_WaterUsed",
+                sanitizedPlayerName + "_TimeToExtinguishFire",
+                sanitizedPlayerName + "_TimeSinceFireStart",
                 "deviceNew"
             };
             
@@ -75,25 +79,25 @@ public class DisplayPlayerDataUI : MonoBehaviour
             if (playerNameText != null)
                 playerNameText.text = "Player: " + playerName;
             
-            if (playerData.TryGetValue(playerName + "_FinalScore", out var score))
+            if (playerData.TryGetValue(sanitizedPlayerName + "_FinalScore", out var score))
             {
                 if (finalScoreText != null)
                     finalScoreText.text = "Final Score: " + score.Value.GetAs<string>();
             }
             
-            if (playerData.TryGetValue(playerName + "_WaterUsed", out var water))
+            if (playerData.TryGetValue(sanitizedPlayerName + "_WaterUsed", out var water))
             {
                 if (waterUsedText != null)
                     waterUsedText.text = "Water Used: " + water.Value.GetAs<string>();
             }
             
-            if (playerData.TryGetValue(playerName + "_TimeToExtinguishFire", out var time))
+            if (playerData.TryGetValue(sanitizedPlayerName + "_TimeToExtinguishFire", out var time))
             {
                 if (timeToExtinguishText != null)
                     timeToExtinguishText.text = "Time to Extinguish: " + time.Value.GetAs<string>();
             }
             
-            if (playerData.TryGetValue(playerName + "_TimeSinceFireStart", out var fireTime))
+            if (playerData.TryGetValue(sanitizedPlayerName + "_TimeSinceFireStart", out var fireTime))
             {
                 if (timeSinceFireStartText != null)
                     timeSinceFireStartText.text = "Time Since Fire Start: " + fireTime.Value.GetAs<string>();
@@ -197,13 +201,14 @@ public class DisplayPlayerDataUI : MonoBehaviour
         {
             string playerId = allPlayerIDs[i];
             string playerName = playerNames[i];
+            string sanitizedPlayerName = SanitizeKeyName(playerName);
             
             try
             {
                 var keys = new HashSet<string> {
-                    playerName + "_FinalScore",
-                    playerName + "_WaterUsed",
-                    playerName + "_TimeToExtinguishFire",
+                    sanitizedPlayerName + "_FinalScore",
+                    sanitizedPlayerName + "_WaterUsed",
+                    sanitizedPlayerName + "_TimeToExtinguishFire",
                     "deviceNew"
                 };
                 
@@ -217,13 +222,13 @@ public class DisplayPlayerDataUI : MonoBehaviour
                 if (playerData.TryGetValue("deviceNew", out var device))
                     leaderboardData += $"Device: {device.Value.GetAs<string>()}\n";
                 
-                if (playerData.TryGetValue(playerName + "_FinalScore", out var score))
+                if (playerData.TryGetValue(sanitizedPlayerName + "_FinalScore", out var score))
                     leaderboardData += $"Score: {score.Value.GetAs<string>()}\n";
                 
-                if (playerData.TryGetValue(playerName + "_WaterUsed", out var water))
+                if (playerData.TryGetValue(sanitizedPlayerName + "_WaterUsed", out var water))
                     leaderboardData += $"Water Used: {water.Value.GetAs<string>()}\n";
                 
-                if (playerData.TryGetValue(playerName + "_TimeToExtinguishFire", out var time))
+                if (playerData.TryGetValue(sanitizedPlayerName + "_TimeToExtinguishFire", out var time))
                     leaderboardData += $"Time to Extinguish: {time.Value.GetAs<string>()}\n";
                 
                 leaderboardData += "\n---\n\n";
@@ -263,5 +268,28 @@ public class DisplayPlayerDataUI : MonoBehaviour
         if (timeSinceFireStartText != null) timeSinceFireStartText.text = "";
         if (deviceNameText != null) deviceNameText.text = "";
         if (leaderboardText != null) leaderboardText.text = "";
+    }
+
+    /// <summary>
+    /// Sanitize key names by removing invalid characters to match ScoreManager's sanitization
+    /// </summary>
+    private string SanitizeKeyName(string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return "UnknownPlayer";
+            
+        // Replace invalid characters with underscores (must match ScoreManager logic)
+        char[] invalidChars = new char[] { '/', '\\', '#', '?', '&', '=', ' ' };
+        string sanitized = input;
+        foreach (char c in invalidChars)
+        {
+            sanitized = sanitized.Replace(c, '_');
+        }
+        
+        // Limit length to 200 to leave room for suffix
+        if (sanitized.Length > 200)
+            sanitized = sanitized.Substring(0, 200);
+            
+        return sanitized;
     }
 }
