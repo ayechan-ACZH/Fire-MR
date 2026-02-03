@@ -10,6 +10,8 @@ public class ButtonController : MonoBehaviour
     [SerializeField] private AudioSource audioSource;
 
     [SerializeField] private ExtinguishFire extinguishFire;
+
+    [SerializeField] private GameObject myPanel;
     
     private Button button;
 

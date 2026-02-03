@@ -12,13 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 469c24fdb3bd6431b92cc1465bd9166b, type: 3}
   m_Name: RemoteConfigDataStoreAsset
   m_EditorClassIdentifier: 
-  _rsKeyList: "[\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"5e5fd66f-9dea-4f5b-b8c2-89f5a877b2b8\"\r\n   
-    },\r\n    \"rs\": {\r\n      \"key\": \"handTrackedMode\",\r\n      \"type\":
-    \"bool\",\r\n      \"value\": false\r\n    }\r\n  }\r\n]"
-  _rsLastCachedKeyList: "[\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"5e5fd66f-9dea-4f5b-b8c2-89f5a877b2b8\"\r\n   
-    },\r\n    \"rs\": {\r\n      \"key\": \"handTrackedMode\",\r\n      \"type\":
-    \"bool\",\r\n      \"value\": false\r\n    }\r\n  }\r\n]"
-  _environments: "[\r\n  {\r\n    \"projectId\": \"980db0d6-fe61-40f6-a7ba-a4fceeb31713\",\r\n   
-    \"name\": \"production\",\r\n    \"id\": \"d262110d-294c-42e8-a7bb-126d2ba88591\",\r\n   
-    \"isDefault\": true,\r\n    \"createdAt\": \"2024-06-28T14:14:43Z\",\r\n    \"updatedAt\":
-    \"2024-06-28T14:14:43Z\"\r\n  }\r\n]"
+  _rsKeyList: "[\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"fece0483-22f4-47b5-929e-a8bac47f9a3c\"\r\n   
+    },\r\n    \"rs\": {\r\n      \"key\": \"currentPlayerName\",\r\n      \"type\":
+    \"string\",\r\n      \"value\": \"John\"\r\n    }\r\n  },\r\n  {\r\n    \"metadata\":
+    {\r\n      \"entityId\": \"9e66a8a2-d0ff-4bbf-a073-2966b4f96738\"\r\n    },\r\n   
+    \"rs\": {\r\n      \"key\": \"handTrackedMode\",\r\n      \"type\": \"bool\",\r\n     
+    \"value\": true\r\n    }\r\n  }\r\n]"
+  _rsLastCachedKeyList: "[\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"fece0483-22f4-47b5-929e-a8bac47f9a3c\"\r\n   
+    },\r\n    \"rs\": {\r\n      \"key\": \"currentPlayerName\",\r\n      \"type\":
+    \"string\",\r\n      \"value\": \"John\"\r\n    }\r\n  },\r\n  {\r\n    \"metadata\":
+    {\r\n      \"entityId\": \"9e66a8a2-d0ff-4bbf-a073-2966b4f96738\"\r\n    },\r\n   
+    \"rs\": {\r\n      \"key\": \"handTrackedMode\",\r\n      \"type\": \"bool\",\r\n     
+    \"value\": true\r\n    }\r\n  }\r\n]"
+  _environments: "[\r\n  {\r\n    \"projectId\": \"826137c8-93de-473d-a548-bb81cffa0dda\",\r\n   
+    \"name\": \"production\",\r\n    \"id\": \"b6c1eb41-a6e6-4b89-b5cf-eb92f9251497\",\r\n   
+    \"isDefault\": true,\r\n    \"createdAt\": \"2026-01-05T11:42:24Z\",\r\n    \"updatedAt\":
+    \"2026-01-05T11:42:24Z\"\r\n  }\r\n]"

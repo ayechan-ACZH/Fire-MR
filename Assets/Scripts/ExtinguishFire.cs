@@ -21,6 +21,9 @@ public class ExtinguishFire : MonoBehaviour
     ScoreManager scoreManager;
     DisplayPlayerDataUI displayPlayerDataUI;
 
+    [SerializeField]
+    private SaveUserName saveUserName;
+
     public TextMeshProUGUI waterUsedText;
 
     public TextMeshProUGUI timeText;
@@ -112,34 +115,50 @@ public class ExtinguishFire : MonoBehaviour
 
         // Add a listener to apply settings when successfully retrieved:
         RemoteConfigService.Instance.FetchCompleted += ApplyRemoteConfig;
-        await RemoteConfigService.Instance.FetchConfigsAsync(new userAttributes(), new appAttributes());
+        
+        try
+        {
+            Debug.Log("Fetching remote config...");
+            await RemoteConfigService.Instance.FetchConfigsAsync(new userAttributes(), new appAttributes());
+            Debug.Log("Remote config fetch completed");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Failed to fetch remote config: {e.Message}");
+        }
 
         // Start the TCP server
         StartServer();
     }
 
+
+
     void ApplyRemoteConfig(ConfigResponse configResponse)
     {
+        Debug.Log($"ApplyRemoteConfig called with origin: {configResponse.requestOrigin}");
+        //currentPlayerName = saveUserName.currentPlayerName;
+        
         // Conditionally update settings, depending on the response's origin:
         switch (configResponse.requestOrigin)
         {
             case ConfigOrigin.Default:
-                Debug.Log("No settings loaded this session and no local cache file exists; using default values.");
+                Debug.LogWarning("No settings loaded this session and no local cache file exists; using default values.");
                 break;
             case ConfigOrigin.Cached:
-                Debug.Log("No settings loaded this session; using cached values from a previous session.");
+                Debug.LogWarning("No settings loaded this session; using cached values from a previous session.");
                 break;
             case ConfigOrigin.Remote:
                 Debug.Log("New settings loaded this session; updated values accordingly.");
                 Debug.Log("handTrackedMode: " + RemoteConfigService.Instance.appConfig.GetBool("handTrackedMode"));
                 Debug.Log("currentPlayerName: " + RemoteConfigService.Instance.appConfig.GetString("currentPlayerName"));
-
-
                 break;
         }
 
+        // Apply config values regardless of origin
         handTrackedMode = RemoteConfigService.Instance.appConfig.GetBool("handTrackedMode", true);
         currentPlayerName = RemoteConfigService.Instance.appConfig.GetString("currentPlayerName", "Default Player");
+        
+        Debug.Log($"Applied config - handTrackedMode: {handTrackedMode}, currentPlayerName: {currentPlayerName}");
 
         // set the current particle system based on the handWaterParticlesOn boolean
         if (handTrackedMode)
@@ -313,19 +332,6 @@ public class ExtinguishFire : MonoBehaviour
 
         }
 
-        // if (Input.GetKeyDown(KeyCode.S))
-        // {
-        //     Debug.Log("Stopping stopping fire particles via keyboard S key.");
-        //     // Stop emission and clear any existing particles so the visual fire disappears immediately
-        //     if (fireParticles != null)
-        //     {
-        //         fireParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-        //         Debug.Log("fireParticles StopEmittingAndClear called. isPlaying=" + fireParticles.isPlaying + ", isAlive=" + fireParticles.IsAlive());
-        //     }
-
-        //     Destroy(currentFireInstance);
-        // }
-
         // check if the water particles are colliding with the fire particles for more than 3 seconds
         if (currentWaterParticles && fireParticles)
         {
@@ -361,6 +367,8 @@ public class ExtinguishFire : MonoBehaviour
 
                         finishAINarration();
 
+                        currentPlayerName = saveUserName.currentPlayerName;
+
                         scoreManager.getFinalScore(currentPlayerName, true, 600 + timeToExtinguish, amtWaterUsed, timeSinceFireStart);
 
                         int finalScore = timeSinceFireStart - amtWaterUsed - timeToExtinguish;
@@ -385,8 +393,6 @@ public class ExtinguishFire : MonoBehaviour
                         
                         // shw this device id on the screen
                         serverConfigStatusText.text += "\nDevice ID: " + SystemInfo.deviceUniqueIdentifier;
-
-                        
                         
                     }
 
@@ -466,22 +472,15 @@ public class ExtinguishFire : MonoBehaviour
                 {
                     if (value < 50000)
                     {
-                        // todo: try uncommenting these
-                        //if (!currentWaterParticles.isPlaying)
-                        //{
                             currentWaterParticles.Play();
                             Debug.Log("Particles started.");
-                            serverConfigStatusText.text += "\nParticles started.";
-                        //}
+                            serverConfigStatusText.text += "\nParticles started.";      
                     }
                     else
                     {
-                        //if (currentWaterParticles.isPlaying)
-                        //{
                             currentWaterParticles.Stop();
                             Debug.Log("Particles stopped.");
                             serverConfigStatusText.text += "\nParticles stopped.";
-                        //}
                     }
                 }
                 else
