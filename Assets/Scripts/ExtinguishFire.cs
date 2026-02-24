@@ -369,7 +369,7 @@ public class ExtinguishFire : MonoBehaviour
 
                         currentPlayerName = saveUserName.currentPlayerName;
 
-                        scoreManager.getFinalScore(currentPlayerName, true, 600 + timeToExtinguish, amtWaterUsed, timeSinceFireStart);
+                        scoreManager.getFinalScore(currentPlayerName, true, timeSinceFireStart - 600 + timeToExtinguish, amtWaterUsed, timeSinceFireStart);
 
                         int finalScore = timeSinceFireStart - amtWaterUsed - timeToExtinguish;
 
