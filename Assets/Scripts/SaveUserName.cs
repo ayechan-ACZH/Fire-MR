@@ -22,8 +22,8 @@ public class SaveUserName : MonoBehaviour
         currentPlayerName = playerNameInputField.text;
         Debug.Log("Player name set to: " + currentPlayerName);
 
-        UserNamePanel.SetActive(false);
-        TrainerUIPanel.SetActive(true);
+        // UserNamePanel.SetActive(false);
+        // TrainerUIPanel.SetActive(true);
     }
           
 }

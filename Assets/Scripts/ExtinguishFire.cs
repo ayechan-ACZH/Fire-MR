@@ -46,6 +46,9 @@ public class ExtinguishFire : MonoBehaviour
 
     public AudioSource aiNarrationAudio;
     public AudioSource endAINarrationAudio;
+
+    [SerializeField]
+    private AudioClip[] aiNarrationClips;
     // 4 ai audio clips for the game
     public AudioClip aiNarrationWelcome1;
     public AudioClip aiNarrationWelcome2;
@@ -211,6 +214,17 @@ public class ExtinguishFire : MonoBehaviour
         string localIPAddress = GetLocalIPv4Address();
         Debug.Log("Local IPv4 Address: " + localIPAddress);
         serverConfigStatusText.text += "\nLocal IPv4 Address: " + localIPAddress;
+
+        //Play Ai Narration at the start of the game
+        // if(!aiNarrationStarted){
+        //         Debug.Log("Playing AI Narration");
+            
+        //         // make the trainer panel ui disappear
+        //         trainerPanelUI.SetActive(false);
+
+        //         StartAINarration(0);
+        //         aiNarrationStarted = true;
+        // }
     }
 
     // Update is called once per frame
@@ -225,7 +239,7 @@ public class ExtinguishFire : MonoBehaviour
             distanceBetweenFingerAndPalm = delta.magnitude * 100;
         }
 
-        if (!handControlsLocked || true) 
+        if (!handControlsLocked) 
         {
           // if the left trigger is pressed, play the water particles from the hand and increment the water used and play the sound
           if ((OVRInput.Get(OVRInput.Axis1D.PrimaryIndexTrigger) > 0.5f)||
@@ -317,7 +331,7 @@ public class ExtinguishFire : MonoBehaviour
                 // make the trainer panel ui disappear
                 trainerPanelUI.SetActive(false);
 
-                StartAINarration();
+                StartAINarration(0);
                 aiNarrationStarted = true;
             }
             
@@ -406,30 +420,38 @@ public class ExtinguishFire : MonoBehaviour
         }
     }
 
-    public void StartAINarration()
+    public void StartAINarration(int index)
     {
-        StartCoroutine(PlayAINarration());
+        StartCoroutine(PlayAINarration(index));
     }
 
-    private IEnumerator PlayAINarration()
+    private IEnumerator PlayAINarration(int i)
     {
         // wait 5 seconds before starting the ai narration (so headset can be put on)
-        yield return new WaitForSeconds(8);
-
-        // Play the first audio clip
-        aiNarrationAudio.PlayOneShot(aiNarrationWelcome1);
-        yield return new WaitWhile(() => aiNarrationAudio.isPlaying);
-
-        // Play the second audio clip
-        aiNarrationAudio.PlayOneShot(aiNarrationWelcome2);
-        yield return new WaitWhile(() => aiNarrationAudio.isPlaying);
-
-        // now allow the hand controls to be unlocked so fire can be extinguished
-        handControlsLocked = false;
-
-        // Play the third audio clip
-        aiNarrationAudio.PlayOneShot(aiNarrationWelcome3);
-        yield return new WaitWhile(() => aiNarrationAudio.isPlaying);
+        // if(i == 0)
+        // {
+        //     yield return new WaitForSeconds(5);
+        //     aiNarrationAudio.PlayOneShot(aiNarrationClips[i]);
+        //     yield return new WaitWhile(() => aiNarrationAudio.isPlaying);
+        //     yield break;
+        // }
+        // else
+        {
+            if(aiNarrationAudio.isPlaying)
+                {
+                    aiNarrationAudio.Stop();
+                }
+            aiNarrationAudio.PlayOneShot(aiNarrationClips[i]);
+            yield return new WaitWhile(() => aiNarrationAudio.isPlaying);
+            
+            if(i == aiNarrationClips.Length - 1)
+            {
+                // now allow the hand controls to be unlocked so fire can be extinguished
+                handControlsLocked = false;
+            }
+            
+        }
+      
     }
 
     public void finishAINarration()
