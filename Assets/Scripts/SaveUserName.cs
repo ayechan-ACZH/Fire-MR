@@ -7,7 +7,7 @@ using WebSocketSharp;
 
 public class SaveUserName : MonoBehaviour
 {
-    [SerializeField] private TMP_InputField playerNameInputField;
+    [SerializeField] private TMP_InputField playerName;
 
     [SerializeField] private GameObject UserNamePanel;
 
@@ -19,7 +19,7 @@ public class SaveUserName : MonoBehaviour
 
     public void SetPlayerName()
     {
-        currentPlayerName = playerNameInputField.text;
+        currentPlayerName = playerName.text;
         Debug.Log("Player name set to: " + currentPlayerName);
 
         // UserNamePanel.SetActive(false);

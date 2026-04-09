@@ -42,7 +42,10 @@ public class ExtinguishFire : MonoBehaviour
 
     // track the spawned fire alarm instance so we can remove it safely without touching the prefab reference
     private GameObject currentFireAlarmInstance;
-    public int timeToExtinguish = 600;
+    public float timeToExtinguish = 10f; // seconds (was 600 frames at 60fps)
+
+    public ProgressCircle progressCircle;
+    private float initialTimeToExtinguish;
 
     public AudioSource aiNarrationAudio;
     public AudioSource endAINarrationAudio;
@@ -55,11 +58,19 @@ public class ExtinguishFire : MonoBehaviour
     public AudioClip aiNarrationWelcome3;
 
     private bool aiNarrationStarted = false;
+
+    private bool startTimer = false; // to track when to start the timeSinceFireStart timer
     public AudioSource fireExtinguishingAudio;
     ParticleSystem currentWaterParticles;
     bool soundIsPlaying;
-    public int amtWaterUsed = 0;
-    public int timeSinceFireStart = 0;
+    public float amtWaterUsed = 0f; // litres, based on a 9L UK extinguisher at ~0.15L/s
+    public float timeSinceFireStart = 0f; // seconds
+
+    // scoring (higher is better, max = 1000)
+    public float maxScoreTime = 30f;   // seconds — at or below this = full time score
+    public float maxScoreWater = 9f;   // litres — at or below this = full water score (9L = full extinguisher)
+    [Range(0f, 1f)] public float timeWeight = 0.6f;  // must sum to 1 with waterWeight
+    [Range(0f, 1f)] public float waterWeight = 0.4f;
 
     public TextMeshProUGUI serverConfigStatusText;
 
@@ -197,6 +208,7 @@ public class ExtinguishFire : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        initialTimeToExtinguish = timeToExtinguish;
         controllerWaterParticles.Stop();
         handWaterParticles.Stop();
 
@@ -251,10 +263,10 @@ public class ExtinguishFire : MonoBehaviour
                   soundIsPlaying = true;
               }
 
-              amtWaterUsed += 1;
+              amtWaterUsed += 0.15f * Time.deltaTime;
               currentWaterParticles.Play();
 
-              waterUsedText.text = amtWaterUsed.ToString();
+              waterUsedText.text = amtWaterUsed.ToString("F1");
               Debug.Log("Water used" + (amtWaterUsed));
 
           }
@@ -271,6 +283,10 @@ public class ExtinguishFire : MonoBehaviour
         }
         // ifthe right trigger is pressed, instantiate the fire particles at the hand position
         
+        if(Input.GetKeyDown(KeyCode.T)){
+            progressCircle.SetProgress(0.5f);
+            Debug.Log("Progress circle set to 50% for testing.");
+        }
         
         if (OVRInput.GetDown(OVRInput.Button.One, OVRInput.Controller.RTouch) || Input.GetKeyDown(KeyCode.F))
         {
@@ -289,6 +305,11 @@ public class ExtinguishFire : MonoBehaviour
             GameObject spawnedFire = Instantiate(firePrefab, spawnPos, Quaternion.identity);
 
             currentFireInstance = spawnedFire;
+
+            // get the ProgressCircle from the spawned instance (not the prefab asset)
+            progressCircle = spawnedFire.GetComponent<ProgressCircle>();
+            if (progressCircle != null)
+                progressCircle.SetProgress(0f);
 
             // set the fire particles to the instantiated fire particles child
             fireParticles = spawnedFire.transform.GetChild(0).GetComponent<ParticleSystem>();
@@ -339,10 +360,10 @@ public class ExtinguishFire : MonoBehaviour
         }
 
         // if the fire particles are alive, increment the time since fire start
-        if (currentFireInstance != null && fireParticles.IsAlive())
+        if (currentFireInstance != null && fireParticles.IsAlive() && startTimer == true)
         {
-            timeSinceFireStart += 1;
-            timeText.text = timeSinceFireStart.ToString();
+            timeSinceFireStart += Time.deltaTime;
+            timeText.text = timeSinceFireStart.ToString("F1");
 
         }
 
@@ -361,7 +382,9 @@ public class ExtinguishFire : MonoBehaviour
                 if (distance < 10.0f && angle < 45f)
                 {
                     Debug.Log("3.Water is aimed at fire - distance: " + distance + ", angle: " + angle);
-                    timeToExtinguish -= 1;
+                    timeToExtinguish -= Time.deltaTime;
+                    if (progressCircle != null)
+                        progressCircle.SetProgress((initialTimeToExtinguish - timeToExtinguish) / initialTimeToExtinguish);
                     serverConfigStatusText.text = "Time to extinguish: " + timeToExtinguish;
                     serverConfigStatusText.text += "\nTime since fire start: " + timeSinceFireStart;
                     serverConfigStatusText.text += "\nWater used: " + amtWaterUsed;
@@ -383,11 +406,14 @@ public class ExtinguishFire : MonoBehaviour
 
                         currentPlayerName = saveUserName.currentPlayerName;
 
-                        scoreManager.getFinalScore(currentPlayerName, true, timeSinceFireStart - 600 + timeToExtinguish, amtWaterUsed, timeSinceFireStart);
+                        // higher is better, max 1000
+                        float timeScore  = Mathf.Clamp01(1f - (timeSinceFireStart / maxScoreTime));
+                        float waterScore = Mathf.Clamp01(1f - (amtWaterUsed / maxScoreWater));
+                        float finalScore = (timeScore * timeWeight + waterScore * waterWeight) * 1000f;
 
-                        int finalScore = timeSinceFireStart - amtWaterUsed - timeToExtinguish;
+                        finalScoreText.text = finalScore.ToString("F1");
 
-                        finalScoreText.text = finalScore.ToString();
+                        scoreManager.getFinalScore(currentPlayerName, true, amtWaterUsed, timeSinceFireStart, finalScore);
 
                         
 
@@ -413,7 +439,9 @@ public class ExtinguishFire : MonoBehaviour
                 }
                 else
                 {
-                    timeToExtinguish = 600;
+                    timeToExtinguish = initialTimeToExtinguish;
+                    if (progressCircle != null)
+                        progressCircle.SetProgress(0f); // timeToExtinguish reset to initial value → progress back to 0
                     Debug.Log("Time to extinguish: " + timeToExtinguish);
                 }
             }
@@ -448,6 +476,7 @@ public class ExtinguishFire : MonoBehaviour
             {
                 // now allow the hand controls to be unlocked so fire can be extinguished
                 handControlsLocked = false;
+                startTimer = true; // start the timer for timeSinceFireStart once the narration is done
             }
             
         }

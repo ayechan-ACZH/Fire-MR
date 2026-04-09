@@ -103,7 +103,7 @@ public class SaveDataToCloud : MonoBehaviour
         try
         {
             // Get the water used amount directly
-            int waterUsed = extinguishFire.amtWaterUsed;
+            float waterUsed = extinguishFire.amtWaterUsed;
             string playerName = SanitizeKeyName(extinguishFire.currentPlayerName);
 
             // Validate player name
@@ -146,7 +146,7 @@ public class SaveDataToCloud : MonoBehaviour
     /// <param name="finalScore">The final score</param>
     /// <param name="timeToExtinguish">Time taken to extinguish fire</param>
     /// <param name="timeSinceFireStart">Time since fire started</param>
-    public async void SaveAllGameDataToCloud(int finalScore, int timeToExtinguish, int timeSinceFireStart)
+    public async void SaveAllGameDataToCloud(int finalScore, float timeToExtinguish, float timeSinceFireStart)
     {
         if (extinguishFire == null)
         {
@@ -162,7 +162,7 @@ public class SaveDataToCloud : MonoBehaviour
 
         try
         {
-            int waterUsed = extinguishFire.amtWaterUsed;
+            float waterUsed = extinguishFire.amtWaterUsed;
             string playerName = SanitizeKeyName(extinguishFire.currentPlayerName);
 
             // Validate player name

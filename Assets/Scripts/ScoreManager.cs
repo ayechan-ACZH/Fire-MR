@@ -37,33 +37,29 @@ public class ScoreManager : MonoBehaviour
     public void getFinalScore(
         string currentPlayerName,
         bool fireExtinguished,
-        int timeToExtinguishFire,
-        int waterUsed,
-        int timeSinceFireStart
-        // int timeTakenToDiscoverFire
+        float waterUsed,
+        float timeSinceFireStart,
+        float finalScore
+        // float timeTakenToDiscoverFire
     )
 
     
     {
-        int score = timeSinceFireStart - waterUsed - timeToExtinguishFire;
-
         // time to extinguish fire goes negative - this is the amount of wasted extinguisher liquid
-        serverConfigStatusText.text += "Time to extinguish fire: " + timeToExtinguishFire + "\n";
         serverConfigStatusText.text += "Water used: " + waterUsed + "\n";
         serverConfigStatusText.text += "Time since fire started " + timeSinceFireStart + "\n";
         
-        // right now the lower the new score the better
-        serverConfigStatusText.text += "New score: " + score + "\n";
+        // lower score = better (timeSinceFireStart + waterUsed * waterPenaltyPerLitre)
+        serverConfigStatusText.text += "Final score: " + finalScore + "\n";
 
         // send score to server
         // Sanitize player name to avoid invalid characters in keys
         string sanitizedPlayerName = SanitizeKeyName(currentPlayerName);
         Debug.Log($"[ScoreManager] Saving scores for player: '{currentPlayerName}' (sanitized: '{sanitizedPlayerName}')");
         
-        cloudSaveDataManager.SavePublicData(sanitizedPlayerName + "_TimeToExtinguishFire", timeToExtinguishFire.ToString());
-        cloudSaveDataManager.SavePublicData(sanitizedPlayerName + "_WaterUsed", waterUsed.ToString());
-        cloudSaveDataManager.SavePublicData(sanitizedPlayerName + "_TimeSinceFireStart", timeSinceFireStart.ToString());
-        cloudSaveDataManager.SavePublicData(sanitizedPlayerName + "_FinalScore", score.ToString());
+        cloudSaveDataManager.SavePublicData(sanitizedPlayerName + "_WaterUsed", waterUsed.ToString("F1"));
+        cloudSaveDataManager.SavePublicData(sanitizedPlayerName + "_TimeSinceFireStart", timeSinceFireStart.ToString("F1"));
+        cloudSaveDataManager.SavePublicData(sanitizedPlayerName + "_FinalScore", finalScore.ToString("F1"));
     }
     
     // Sanitize key names by removing invalid characters

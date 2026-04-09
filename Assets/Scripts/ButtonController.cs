@@ -44,7 +44,7 @@ public class ButtonController : MonoBehaviour
             audioSource.PlayOneShot(buttonClickSound);
         }
 
-        extinguishFire.waterUsedText.text = "Fire Extinguished!: " + (600 + extinguishFire.timeToExtinguish) + " seconds used.";
+        extinguishFire.waterUsedText.text = "Fire Extinguished!: " + extinguishFire.timeSinceFireStart.ToString("F1") + "s used.";
     }
 
     void OnDestroy()
