@@ -48,8 +48,6 @@ public class ScoreManager : MonoBehaviour
         // time to extinguish fire goes negative - this is the amount of wasted extinguisher liquid
         serverConfigStatusText.text += "Water used: " + waterUsed + "\n";
         serverConfigStatusText.text += "Time since fire started " + timeSinceFireStart + "\n";
-        
-        // lower score = better (timeSinceFireStart + waterUsed * waterPenaltyPerLitre)
         serverConfigStatusText.text += "Final score: " + finalScore + "\n";
 
         // send score to server
