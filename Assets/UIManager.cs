@@ -1,6 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class UIManager : MonoBehaviour
 {   
@@ -19,6 +24,26 @@ public class UIManager : MonoBehaviour
     {
         hideAllPages();
         UIpages[pageIndex].SetActive(true);
+    }
+
+    public void RestartCurrentScene()
+    {
+        Scene activeScene = SceneManager.GetActiveScene();
+        SceneManager.LoadScene(activeScene.name);
+    }
+
+    public void QuitApplication()
+    {
+#if UNITY_EDITOR
+        EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+    }
+
+    public void finishSlide()
+    {
+        showPage(UIpages.Length - 1);
     }
 
 

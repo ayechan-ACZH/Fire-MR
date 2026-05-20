@@ -22,6 +22,9 @@ public class ExtinguishFire : MonoBehaviour
     DisplayPlayerDataUI displayPlayerDataUI;
 
     [SerializeField]
+    private UIManager uiManager;
+
+    [SerializeField]
     private SaveUserName saveUserName;
 
     public TextMeshProUGUI waterUsedText;
@@ -63,12 +66,12 @@ public class ExtinguishFire : MonoBehaviour
     public AudioSource fireExtinguishingAudio;
     ParticleSystem currentWaterParticles;
     bool soundIsPlaying;
-    public float amtWaterUsed = 0f; // litres, based on a 9L UK extinguisher at ~0.15L/s
+    public float amtWaterUsed = 0f; // litres, based on a 6L UK extinguisher at ~0.15L/s
     public float timeSinceFireStart = 0f; // seconds
 
     // scoring (higher is better, max = 1000)
     public float maxScoreTime = 30f;   // seconds — at or below this = full time score
-    public float maxScoreWater = 9f;   // litres — at or below this = full water score (9L = full extinguisher)
+    public float maxScoreWater = 6f;   // litres — at or below this = full water score (6L = full extinguisher)
     [Range(0f, 1f)] public float timeWeight = 0.6f;  // must sum to 1 with waterWeight
     [Range(0f, 1f)] public float waterWeight = 0.4f;
 
@@ -94,6 +97,7 @@ public class ExtinguishFire : MonoBehaviour
     public bool handControlsLocked = true;
 
     private TcpListener tcpListener;
+    private bool isServerRunning;
 
     async Task InitializeRemoteConfigAsync()
     {
@@ -483,24 +487,60 @@ public class ExtinguishFire : MonoBehaviour
       
     }
 
+
     public void finishAINarration()
     {
         endAINarrationAudio.Play();
+        uiManager.finishSlide();
+        
     }
 
     private async void StartServer()
     {
-        tcpListener = new TcpListener(IPAddress.Any, 41196);
-        tcpListener.Start();
-        Debug.Log("Server started.");
-        serverConfigStatusText.text += "\nServer started!!";
-
-
-        while (true)
+        try
         {
-            TcpClient client = await tcpListener.AcceptTcpClientAsync();
-            _ = HandleClientAsync(client);  // Fire and forget
+            tcpListener = new TcpListener(IPAddress.Any, 41196);
+            tcpListener.Start();
+            isServerRunning = true;
+            Debug.Log("Server started.");
+            serverConfigStatusText.text += "\nServer started!!";
+
+            while (isServerRunning)
+            {
+                TcpClient client = await tcpListener.AcceptTcpClientAsync();
+                _ = HandleClientAsync(client);  // Fire and forget
+            }
         }
+        catch (SocketException)
+        {
+            if (isServerRunning)
+            {
+                Debug.LogWarning("Server stopped due to socket error.");
+            }
+        }
+        catch (ObjectDisposedException)
+        {
+            // Expected when stopping the listener during scene reload/quit.
+        }
+    }
+
+    private void StopServer()
+    {
+        if (!isServerRunning)
+        {
+            return;
+        }
+
+        isServerRunning = false;
+
+        if (tcpListener != null)
+        {
+            tcpListener.Stop();
+            tcpListener = null;
+        }
+
+        Debug.Log("Server stopped.");
+        serverConfigStatusText.text += "server stopped";
     }
 
     private async Task HandleClientAsync(TcpClient client)
@@ -558,9 +598,12 @@ public class ExtinguishFire : MonoBehaviour
 
     private void OnApplicationQuit()
     {
-        tcpListener.Stop();
-        Debug.Log("Server stopped.");
-        serverConfigStatusText.text += "server stopped";
+        StopServer();
+    }
+
+    private void OnDestroy()
+    {
+        StopServer();
 
     }
 }
