@@ -244,7 +244,7 @@ public class ExtinguishFire : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    async Task Update()
     {
         if (leftHandSqueezeTrigger) {
             // for hand squeeze tracking
@@ -342,6 +342,8 @@ public class ExtinguishFire : MonoBehaviour
             if (fireAlarm != null)
             {
                 currentFireAlarmInstance = Instantiate(fireAlarm, spawnPos, spawnRot);
+                await Task.Delay(1000);
+                currentFireAlarmInstance.GetComponent<BoxCollider>().enabled = true; //enable collider after 5 seconds so it doesn't interfere with hand spawning the alarm
             }
         }
 
