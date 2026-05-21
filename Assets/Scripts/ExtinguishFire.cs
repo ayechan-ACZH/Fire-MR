@@ -70,10 +70,16 @@ public class ExtinguishFire : MonoBehaviour
     public float timeSinceFireStart = 0f; // seconds
 
     // scoring (higher is better, max = 1000)
-    public float maxScoreTime = 30f;   // seconds — at or below this = full time score
-    public float maxScoreWater = 6f;   // litres — at or below this = full water score (6L = full extinguisher)
-    [Range(0f, 1f)] public float timeWeight = 0.6f;  // must sum to 1 with waterWeight
-    [Range(0f, 1f)] public float waterWeight = 0.4f;
+    // Full subscore when value is at or below the target.
+    public float perfectTimeTargetSeconds = 15f;
+    public float perfectWaterTargetLitres = 2.5f;
+
+    // Zero subscore when value is at or above the cutoff.
+    public float zeroTimeScoreSeconds = 60f;
+    public float zeroWaterScoreLitres = 6f;
+
+    [Range(0f, 1f)] public float timeWeight = 0.7f;  // normalized with waterWeight at runtime
+    [Range(0f, 1f)] public float waterWeight = 0.3f;
 
     public TextMeshProUGUI serverConfigStatusText;
 
@@ -213,6 +219,7 @@ public class ExtinguishFire : MonoBehaviour
     void Start()
     {
         initialTimeToExtinguish = timeToExtinguish;
+        NormalizeScoreWeights();
         controllerWaterParticles.Stop();
         handWaterParticles.Stop();
 
@@ -243,9 +250,66 @@ public class ExtinguishFire : MonoBehaviour
         // }
     }
 
+    private void NormalizeScoreWeights()
+    {
+        float total = timeWeight + waterWeight;
+
+        if (total <= 0.0001f)
+        {
+            timeWeight = 0.7f;
+            waterWeight = 0.3f;
+            return;
+        }
+
+        timeWeight /= total;
+        waterWeight /= total;
+    }
+
+    private float CalculateThresholdScore(float value, float fullScoreThreshold, float zeroScoreThreshold)
+    {
+        if (value <= fullScoreThreshold)
+        {
+            return 1f;
+        }
+
+        if (value >= zeroScoreThreshold)
+        {
+            return 0f;
+        }
+
+        float range = Mathf.Max(0.0001f, zeroScoreThreshold - fullScoreThreshold);
+        float t = (value - fullScoreThreshold) / range;
+        return 1f - t;
+    }
+
+    private bool HasWaterRemaining()
+    {
+        return amtWaterUsed < zeroWaterScoreLitres;
+    }
+
+    private void StopWaterSpray()
+    {
+        if (soundIsPlaying)
+        {
+            fireExtinguishingAudio.Stop();
+            soundIsPlaying = false;
+        }
+
+        if (currentWaterParticles != null)
+        {
+            currentWaterParticles.Stop();
+        }
+    }
+
     // Update is called once per frame
     async Task Update()
     {
+        if (!HasWaterRemaining())
+        {
+            amtWaterUsed = zeroWaterScoreLitres;
+            StopWaterSpray();
+        }
+
         if (leftHandSqueezeTrigger) {
             // for hand squeeze tracking
             Vector3 delta = middleFingerCollider.transform.position - palmCenterCollider.transform.position;
@@ -261,28 +325,34 @@ public class ExtinguishFire : MonoBehaviour
           if ((OVRInput.Get(OVRInput.Axis1D.PrimaryIndexTrigger) > 0.5f)||
               (leftHandSqueezeTrigger && (distanceBetweenFingerAndPalm < 4)))
           {
-              if (!soundIsPlaying)
+              if (!HasWaterRemaining())
               {
-                  fireExtinguishingAudio.Play();
-                  soundIsPlaying = true;
+                  StopWaterSpray();
               }
+              else
+              {
+                  if (!soundIsPlaying)
+                  {
+                      fireExtinguishingAudio.Play();
+                      soundIsPlaying = true;
+                  }
 
-              amtWaterUsed += 0.15f * Time.deltaTime;
-              currentWaterParticles.Play();
+                  amtWaterUsed = Mathf.Min(amtWaterUsed + (0.15f * Time.deltaTime), zeroWaterScoreLitres);
+                  currentWaterParticles.Play();
 
-              waterUsedText.text = amtWaterUsed.ToString("F1");
-              Debug.Log("Water used" + (amtWaterUsed));
+                  if (!HasWaterRemaining())
+                  {
+                      StopWaterSpray();
+                  }
+
+                  waterUsedText.text = amtWaterUsed.ToString("F1");
+                  Debug.Log("Water used" + (amtWaterUsed));
+              }
 
           }
           else
           {
-              if (soundIsPlaying)
-              {
-                  fireExtinguishingAudio.Stop();
-                  soundIsPlaying = false;
-              }
-
-              currentWaterParticles.Stop();
+              StopWaterSpray();
           }
         }
         // ifthe right trigger is pressed, instantiate the fire particles at the hand position
@@ -413,9 +483,20 @@ public class ExtinguishFire : MonoBehaviour
                         currentPlayerName = saveUserName.currentPlayerName;
 
                         // higher is better, max 1000
-                        float timeScore  = Mathf.Clamp01(1f - (timeSinceFireStart / maxScoreTime));
-                        float waterScore = Mathf.Clamp01(1f - (amtWaterUsed / maxScoreWater));
-                        float finalScore = (timeScore * timeWeight + waterScore * waterWeight) * 1000f;
+                        float timeScore = CalculateThresholdScore(
+                            timeSinceFireStart,
+                            perfectTimeTargetSeconds,
+                            zeroTimeScoreSeconds
+                        );
+
+                        float waterScore = CalculateThresholdScore(
+                            amtWaterUsed,
+                            perfectWaterTargetLitres,
+                            zeroWaterScoreLitres
+                        );
+
+                        float weightedScore = Mathf.Clamp01((timeScore * timeWeight) + (waterScore * waterWeight));
+                        float finalScore = weightedScore * 1000f;
 
                         finalScoreText.text = finalScore.ToString("F1");
 
@@ -461,15 +542,7 @@ public class ExtinguishFire : MonoBehaviour
 
     private IEnumerator PlayAINarration(int i)
     {
-        // wait 5 seconds before starting the ai narration (so headset can be put on)
-        // if(i == 0)
-        // {
-        //     yield return new WaitForSeconds(5);
-        //     aiNarrationAudio.PlayOneShot(aiNarrationClips[i]);
-        //     yield return new WaitWhile(() => aiNarrationAudio.isPlaying);
-        //     yield break;
-        // }
-        // else
+        
         {
             if(aiNarrationAudio.isPlaying)
                 {
