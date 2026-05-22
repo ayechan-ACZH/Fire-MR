@@ -27,6 +27,9 @@ public class ExtinguishFire : MonoBehaviour
     [SerializeField]
     private SaveUserName saveUserName;
 
+    [SerializeField]
+    private GameObject spreadFirePrefab;
+
     public TextMeshProUGUI waterUsedText;
 
     public TextMeshProUGUI timeText;
@@ -316,6 +319,25 @@ public class ExtinguishFire : MonoBehaviour
         if (uiManager != null)
         {
             uiManager.showGameOverSlide();
+
+            if (spreadFirePrefab != null)
+            {
+                Vector3 spreadSpawnPos = transform.position;
+                if (currentFireInstance != null)
+                {
+                    spreadSpawnPos = currentFireInstance.transform.position;
+                }
+                else
+                {
+                    Debug.LogWarning("Current fire instance is null. Spawning spread fire at controller position instead.");
+                }
+
+                Instantiate(spreadFirePrefab, spreadSpawnPos, Quaternion.identity);
+            }
+            else
+            {
+                Debug.LogWarning("spreadFirePrefab reference is missing; cannot spawn spread fire on game over.");
+            }
         }
         else
         {
