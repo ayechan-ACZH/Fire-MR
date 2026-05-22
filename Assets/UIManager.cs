@@ -12,6 +12,8 @@ public class UIManager : MonoBehaviour
 
     [SerializeField] private GameObject[] UIpages;
     // Start is called before the first frame update
+
+    [SerializeField] private GameObject gameOverSlide;
     public void hideAllPages()
     {
         foreach (GameObject page in UIpages)
@@ -46,6 +48,10 @@ public class UIManager : MonoBehaviour
         showPage(UIpages.Length - 1);
     }
 
+    public void showGameOverSlide()
+    {
+        gameOverSlide.SetActive(true);
+    }
 
     
 

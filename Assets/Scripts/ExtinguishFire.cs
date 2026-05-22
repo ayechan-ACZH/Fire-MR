@@ -68,6 +68,7 @@ public class ExtinguishFire : MonoBehaviour
     bool soundIsPlaying;
     public float amtWaterUsed = 0f; // litres, based on a 6L UK extinguisher at ~0.15L/s
     public float timeSinceFireStart = 0f; // seconds
+    private bool hasShownGameOverSlide = false;
 
     // scoring (higher is better, max = 1000)
     // Full subscore when value is at or below the target.
@@ -299,6 +300,27 @@ public class ExtinguishFire : MonoBehaviour
         {
             currentWaterParticles.Stop();
         }
+
+       
+    }
+
+    private void ShowGameOverSlideIfOutOfWater()
+    {
+        if (hasShownGameOverSlide || HasWaterRemaining())
+        {
+            return;
+        }
+
+        hasShownGameOverSlide = true;
+
+        if (uiManager != null)
+        {
+            uiManager.showGameOverSlide();
+        }
+        else
+        {
+            Debug.LogWarning("UIManager reference is missing; cannot show game over slide.");
+        }
     }
 
     // Update is called once per frame
@@ -308,6 +330,7 @@ public class ExtinguishFire : MonoBehaviour
         {
             amtWaterUsed = zeroWaterScoreLitres;
             StopWaterSpray();
+            ShowGameOverSlideIfOutOfWater();
         }
 
         if (leftHandSqueezeTrigger) {
@@ -343,6 +366,7 @@ public class ExtinguishFire : MonoBehaviour
                   if (!HasWaterRemaining())
                   {
                       StopWaterSpray();
+                      ShowGameOverSlideIfOutOfWater();
                   }
 
                   waterUsedText.text = amtWaterUsed.ToString("F1");
